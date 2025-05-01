@@ -28,7 +28,7 @@ RUN_C       := $(RUN_BIN) -w $(RUN_TEST)
 RUN_D       := $(RUN_BIN) -m $(RUN_TEST)
 RUN_E       := $(RUN_BIN) $(RUN_TEST)
 RUN_F       := cat $(RUN_TEST) | $(RUN_BIN) -l
-RUN         := $(RUN_A);$(RUN_B);$(RUN_C);$(RUN_D);$(RUN_E);
+RUN         := $(RUN_A);$(RUN_B);$(RUN_C);$(RUN_D);$(RUN_E);$(RUN_F);
 
 #---------------------------------------------------------------------------------
 #DO NOT EDIT BELOW THIS LINE

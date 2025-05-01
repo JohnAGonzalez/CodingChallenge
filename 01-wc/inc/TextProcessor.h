@@ -31,6 +31,7 @@ class TextProcessor
 
         // private member functions
         void init();
+        void resetCounts();
         void processInput();
         void processBytes();
         void processLines();
