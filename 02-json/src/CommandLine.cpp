@@ -14,17 +14,16 @@ CommandLine::~CommandLine()
 
 void CommandLine::init()
 {
-    _fileList.clear();
+    _filename.clear();
 }
 
 void CommandLine::processInput()
 {
-    for(int argc = 1; argc < _argc; ++argc)
-    {
-        // first, let's make sure that the file exists
-        std::string filename = _argv[argc];
-        std::ifstream file(filename);
-        if (file.good())      
-            _fileList.push_back(filename);
-    }
+    // first, let's make sure that the file exists
+    std::string filename = _argv[1];
+    std::ifstream file(filename);
+
+    // only keep it if the file exists
+    if (file.good())      
+        _filename = filename;
 }

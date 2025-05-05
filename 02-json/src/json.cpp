@@ -1,4 +1,6 @@
 #include "json.h"
+#include "CommandLine.h"
+#include "InputProcessor.h"
 
 int main(int argc, char** argv)
 {
@@ -8,7 +10,7 @@ int main(int argc, char** argv)
     CommandLine c(argc, argv);
 
     // prepare the appropriate input for processing
-    //InputProcessor i(c);
+    InputProcessor i(c);
 
     // process the input and generate the output
     //TextProcessor p(i);

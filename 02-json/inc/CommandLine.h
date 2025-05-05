@@ -3,11 +3,6 @@
 
 // library includes
 #include <string>
-#include <vector>
-
-// file list typedefs
-typedef std::vector<std::string> FileList;
-typedef FileList::iterator FileList_iter;
 
 // class definition
 class CommandLine
@@ -18,7 +13,7 @@ class CommandLine
         ~CommandLine();
 
         // accessors
-        FileList getFileList() { return _fileList; };
+        std::string getFilename() { return _filename; };
 
     protected:
 
@@ -33,7 +28,7 @@ class CommandLine
         int _argc;
         char** _argv;
 
-        FileList _fileList;
+        std::string _filename;
 
 };
 
