@@ -10,7 +10,7 @@ INCDIR      := inc
 BUILDDIR    := obj
 TARGETDIR   := bin
 RESDIR      := res
-TESTDIR     := test
+TESTDIR     := tests
 SRCEXT      := cpp
 DEPEXT      := d
 OBJEXT      := o
@@ -23,11 +23,9 @@ INC         := -I$(INCDIR) -I/usr/local/include
 INCDEP      := -I$(INCDIR)
 
 RUN_BIN		:= $(TARGETDIR)/./$(TARGET)
-RUN_A       := $(RUN_BIN) $(shell find $(TESTDIR)/step1/ -type f -name *.$(TESTEXT))
-RUN_B       := $(RUN_BIN) $(shell find $(TESTDIR)/step2/ -type f -name *.$(TESTEXT))
-RUN_C       := $(RUN_BIN) $(shell find $(TESTDIR)/step3/ -type f -name *.$(TESTEXT))
-RUN_D       := $(RUN_BIN) $(shell find $(TESTDIR)/step4/ -type f -name *.$(TESTEXT))
-RUN         := $(RUN_A);
+RUN_A       := $(RUN_BIN) $(TESTDIR)/step1/invalid.$(TESTEXT)
+RUN_B       := $(RUN_BIN) $(TESTDIR)/step1/valid.$(TESTEXT)
+RUN         := $(RUN_A);$(RUN_B);
 
 #---------------------------------------------------------------------------------
 #DO NOT EDIT BELOW THIS LINE
