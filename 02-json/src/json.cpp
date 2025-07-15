@@ -1,6 +1,7 @@
 #include "json.h"
 #include "CommandLine.h"
 #include "InputProcessor.h"
+#include "JsonParser.h"
 
 int main(int argc, char** argv)
 {
@@ -13,10 +14,18 @@ int main(int argc, char** argv)
     InputProcessor i(c);
 
     // process the input and generate the output
-    //TextProcessor p(i);
-    //p.go();
-
-    return RETURN_SUCCESS;
+    JsonParser jp(i.getInput());
+    
+    if (jp.isValid())
+    {
+        std::cerr << "   Input file IS valid JSON" << std::endl;
+        return RETURN_SUCCESS;
+    }
+    else
+    {
+        std::cerr << "   Input file IS NOT valid JSON" << std::endl;
+        return RETURN_FAIL;
+    }
 }
 
 

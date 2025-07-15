@@ -1,5 +1,6 @@
 #include "CommandLine.h"
 #include <fstream>
+#include <iostream>
 
 CommandLine::CommandLine(int argc, char** argv) : _argc(argc), _argv(argv)
 {
@@ -24,6 +25,6 @@ void CommandLine::processInput()
     std::ifstream file(filename);
 
     // only keep it if the file exists
-    if (file.good())      
+    if (file.good())
         _filename = filename;
 }
