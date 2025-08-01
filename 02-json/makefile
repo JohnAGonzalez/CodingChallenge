@@ -17,15 +17,27 @@ OBJEXT      := o
 TESTEXT     := json
 
 #Flags, Libraries and Includes
-CFLAGS      := -Wall -g -c
+CFLAGS      := -Wall -g -c -O0
 LIB         := -lm 
 INC         := -I$(INCDIR) -I/usr/local/include
 INCDEP      := -I$(INCDIR)
 
 RUN_BIN		:= $(TARGETDIR)/./$(TARGET)
-RUN_A       := $(RUN_BIN) $(TESTDIR)/step1/invalid.$(TESTEXT)
-RUN_B       := $(RUN_BIN) $(TESTDIR)/step1/valid.$(TESTEXT)
-RUN         := $(RUN_A);$(RUN_B);
+RUN_A1      := $(RUN_BIN) $(TESTDIR)/step1/invalid.$(TESTEXT)
+RUN_A2      := $(RUN_BIN) $(TESTDIR)/step1/valid.$(TESTEXT)
+RUN_B1      := $(RUN_BIN) $(TESTDIR)/step2/invalid.$(TESTEXT)
+RUN_B2      := $(RUN_BIN) $(TESTDIR)/step2/invalid2.$(TESTEXT)
+RUN_B3      := $(RUN_BIN) $(TESTDIR)/step2/valid.$(TESTEXT)
+RUN_B4      := $(RUN_BIN) $(TESTDIR)/step2/valid2.$(TESTEXT)
+RUN_C1      := $(RUN_BIN) $(TESTDIR)/step3/invalid.$(TESTEXT)
+RUN_C2      := $(RUN_BIN) $(TESTDIR)/step3/valid.$(TESTEXT)
+RUN_D1      := $(RUN_BIN) $(TESTDIR)/step4/invalid.$(TESTEXT)
+RUN_D2      := $(RUN_BIN) $(TESTDIR)/step4/valid.$(TESTEXT)
+RUN_A       := $(RUN_A1);$(RUN_A2)
+RUN_B       := $(RUN_B1);$(RUN_B2);$(RUN_B3);$(RUN_B4)
+RUN_C       := $(RUN_C1);$(RUN_C2)
+RUN_D       := $(RUN_D1);$(RUN_D2)
+RUN         := $(RUN_A);$(RUN_B)
 
 #---------------------------------------------------------------------------------
 #DO NOT EDIT BELOW THIS LINE

@@ -3,40 +3,57 @@
 
 #include <iostream>
 #include <string>
+#include <map>
 #include <stack>
+#include <vector>
 
 class JsonParser
 {
     public:
         // preferred constructor
-        JsonParser(std::istream& input);
+        JsonParser(std::istream & input);
 
         // public member functions
         void parse();
         bool isValid();
-
+        
     private:
-        // disable the default constructor
-        JsonParser();
+        std::istream & _input;
+        bool _isValid;
 
-        // private member functions
-        void eatWhite();
-
-        // private data members
-        enum Token
-        {
-            Unrecognized,
-            OpenBrace,      // {
-            CloseBrace,     // }
-            End
+        enum class TokenType {
+            LBrace, RBrace, Colon, Comma, String, End, Invalid
         };
 
-        std::istream&   _input;
-        Token           _token;
-        bool            _isValid;
-        int             _look;
+        struct Token {
+            TokenType type;
+            std::string value;
+        };
 
-        std::stack<Token> _tokens;
+        enum Symbol {
+            LBRACE, RBRACE, COLON, COMMA, STRING, END_SYM,
+            S, PAIRS, PAIR, REST
+        };
+
+        enum ActionType { SHIFT, REDUCE, ACCEPT, ERROR_ACT };
+
+        struct Rule {
+            Symbol lhs;
+            std::vector<Symbol> rhs;
+        };
+
+        struct Action {
+            ActionType type;
+            int target;
+        };
+
+        std::vector<Rule> rules;
+        std::map<int, std::map<Symbol, Action>> actionTable;
+        std::map<int, std::map<Symbol, int>> gotoTable;
+
+        void initRules();
+        void initParseTables();
+        std::vector<Token> tokenize();
 };
 
 #endif

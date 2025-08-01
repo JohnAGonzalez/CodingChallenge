@@ -18,12 +18,12 @@ int main(int argc, char** argv)
     
     if (jp.isValid())
     {
-        std::cerr << "   Input file IS valid JSON" << std::endl;
+        std::cerr << "   Input file [" << c.getFilename() << "] IS valid JSON" << std::endl;
         return RETURN_SUCCESS;
     }
     else
     {
-        std::cerr << "   Input file IS NOT valid JSON" << std::endl;
+        std::cerr << "   Input file [" << c.getFilename() << "] IS NOT valid JSON" << std::endl;
         return RETURN_FAIL;
     }
 }
