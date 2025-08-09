@@ -22,7 +22,11 @@ class JsonParser
         bool _isValid;
 
         enum class TokenType {
-           LBrace, RBrace, Colon, Comma, String, Number, True, False, Null, End, Invalid 
+           LBrace, RBrace,
+           LBracket, RBracket,
+           Colon, Comma,
+           String, Number, True, False, Null,
+           End, Invalid 
         };
 
         struct Token {
@@ -31,7 +35,11 @@ class JsonParser
         };
 
         enum Symbol {
-            LBRACE, RBRACE, COLON, COMMA, STRING, NUMBER, TRUE_SYM, FALSE_SYM, NULL_SYM, END_SYM,
+            LBRACE, RBRACE,
+            LBRACKET, RBRACKET,
+            COLON, COMMA,
+            STRING, NUMBER, TRUE_SYM, FALSE_SYM, NULL_SYM,
+            END_SYM,
             S, PAIRS, PAIR, VALUE 
         };
 
