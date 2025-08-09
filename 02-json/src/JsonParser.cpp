@@ -14,7 +14,13 @@ void JsonParser::initRules()
         { S,     { LBRACE, PAIRS, RBRACE } },
         { S,     { LBRACE, RBRACE } },
         { PAIRS, { PAIR } },
-        { PAIR,  { STRING, COLON, STRING } }
+        { PAIRS, { PAIR, COMMA, PAIRS } },
+        { PAIR,  { STRING, COLON, VALUE } },
+        { VALUE, { STRING } },
+        { VALUE, { NUMBER } },
+        { VALUE, { TRUE_SYM } },
+        { VALUE, { FALSE_SYM } },
+        { VALUE, { NULL_SYM } }
     };
 }
 
@@ -32,17 +38,44 @@ void JsonParser::initParseTables()
 
     actionTable[3][COLON] = { SHIFT, 7 };
 
-    actionTable[4][END_SYM] = { REDUCE, 1 }; // S -> { }
+    actionTable[4][END_SYM] = { REDUCE, 1 };
 
     actionTable[5][RBRACE] = { SHIFT, 8 };
 
-    actionTable[6][RBRACE] = { REDUCE, 2 }; // PAIRS -> PAIR
+    actionTable[6][COMMA] = { SHIFT, 9 };
+    actionTable[6][RBRACE] = { REDUCE, 2 };
 
-    actionTable[7][STRING] = { SHIFT, 9 };
+    actionTable[7][STRING] = { SHIFT, 10 };
+    actionTable[7][NUMBER] = { SHIFT, 11 };
+    actionTable[7][TRUE_SYM] = { SHIFT, 12 };
+    actionTable[7][FALSE_SYM] = { SHIFT, 13 };
+    actionTable[7][NULL_SYM] = { SHIFT, 14 };
+    gotoTable[7][VALUE] = 15;
 
     actionTable[8][END_SYM] = { ACCEPT, 0 };
+    
+    actionTable[9][STRING] = { SHIFT, 3 };
+    gotoTable[9][PAIR] = 16;
+    gotoTable[9][PAIRS] = 17;
 
-    actionTable[9][RBRACE] = { REDUCE, 3 }; // PAIR -> STRING : STRING
+    actionTable[10][RBRACE] = { REDUCE, 5 };
+    actionTable[10][COMMA]  = { REDUCE, 5 };
+    actionTable[11][RBRACE] = { REDUCE, 6 };
+    actionTable[11][COMMA]  = { REDUCE, 6 };
+    actionTable[12][RBRACE] = { REDUCE, 7 };
+    actionTable[12][COMMA]  = { REDUCE, 7 };
+    actionTable[13][RBRACE] = { REDUCE, 8 };
+    actionTable[13][COMMA]  = { REDUCE, 8 };
+    actionTable[14][RBRACE] = { REDUCE, 9 };
+    actionTable[14][COMMA]  = { REDUCE, 9 };
+
+    actionTable[15][COMMA] = { REDUCE, 4 };
+    actionTable[15][RBRACE] = { REDUCE, 4 };
+
+    actionTable[16][COMMA] = { SHIFT, 9 };
+    actionTable[16][RBRACE] = { REDUCE, 2 };
+
+    actionTable[17][RBRACE] = { REDUCE, 3 };
 }
 
 void JsonParser::parse()
@@ -103,6 +136,15 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
         return val;
     };
 
+    auto consume_number = [&]() -> std::string {
+        size_t start = i;
+        if (input[i] == '-')
+            ++i;
+        while (i < input.size() && (isdigit(input[i]) || input[i] == '.'))
+            ++i;
+        return input.substr(start, i - start);
+    };
+
     while (i < input.size()) {
         if (isspace(input[i])) {
             ++i;
@@ -121,6 +163,18 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
         } else if (input[i] == '"') {
             std::string str = consume_string();
             tokens.push_back({ TokenType::String, str});
+        } else if (isdigit(input[i]) || input[i] == '-') {
+            std::string num = consume_number();
+            tokens.push_back({ TokenType::Number, num});
+        } else if (input.compare(i, 4, "true") == 0) {
+            tokens.push_back({ TokenType::True, "true" });
+            i += 4;
+        } else if (input.compare(i, 5, "false") == 0) {
+            tokens.push_back({ TokenType::False, "false" });
+            i += 5;
+        } else if (input.compare(i, 4, "null") == 0) {
+            tokens.push_back({ TokenType::Null, "null" });
+            i += 4;
         } else {
             tokens.push_back({ TokenType::Invalid, std::string(1, input[i++]) });
         }

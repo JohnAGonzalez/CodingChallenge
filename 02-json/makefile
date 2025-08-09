@@ -37,7 +37,7 @@ RUN_A       := $(RUN_A1);$(RUN_A2)
 RUN_B       := $(RUN_B1);$(RUN_B2);$(RUN_B3);$(RUN_B4)
 RUN_C       := $(RUN_C1);$(RUN_C2)
 RUN_D       := $(RUN_D1);$(RUN_D2)
-RUN         := $(RUN_A);$(RUN_B)
+RUN         := $(RUN_A);$(RUN_B);$(RUN_C)
 
 #---------------------------------------------------------------------------------
 #DO NOT EDIT BELOW THIS LINE
