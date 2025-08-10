@@ -19,6 +19,7 @@ class JsonParser
         
     private:
         std::istream & _input;
+        std::string _inputText;
         bool _isValid;
 
         enum class TokenType {
@@ -31,7 +32,10 @@ class JsonParser
 
         struct Token {
             TokenType type;
-            std::string value;
+            std::string lexeme;
+            size_t position;    // character offset from start of input
+            size_t line;        // optional
+            size_t column;      // optional
         };
 
         enum Symbol {
@@ -62,6 +66,8 @@ class JsonParser
         void initRules();
         void initParseTables();
         std::vector<Token> tokenize();
+        std::string expectedTokens(int state) const;
+        std::string symbolName(Symbol s) const;
 };
 
 #endif

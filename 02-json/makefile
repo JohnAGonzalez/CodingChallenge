@@ -61,6 +61,13 @@ directories:
 	@mkdir -p $(TARGETDIR)
 	@mkdir -p $(BUILDDIR)
 
+#Initialize all directories
+init_all_dirs: directories
+	@mkdir -p $(SRCDIR)
+	@mkdir -p $(INCDIR)
+	@mkdir -p $(RESDIR)
+	@mkdir -p $(TESTDIR)
+
 #Clean only Objecst
 clean:
 	@$(RM) -rf $(BUILDDIR)

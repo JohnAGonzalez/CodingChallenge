@@ -1,5 +1,7 @@
 #include "JsonParser.h"
 
+#include <sstream>
+
 JsonParser::JsonParser(std::istream & input) : _input(input)
 {
     _isValid = false;
@@ -229,6 +231,23 @@ void JsonParser::parse()
 
         auto it = actionTable[state].find(input);
         if (it == actionTable[state].end()) {
+            // There was a parsing error, let's give some hints on the issue
+            // Let's start with the basic error information
+            const Token &tok = tokens[pos];
+            std::cerr <<
+                "Syntax error at position " << tok.position <<
+                " (line " << tok.line << ", col " << tok.column << "):" << std::endl <<
+                "  Unexpected token " << symbolName(input) << std::endl <<
+                "  Expected one of: " << expectedTokens(state) << std::endl << std::endl;
+
+            // Now lets try to show where the parser thinks the error is located in the original JSON
+            auto start = (tok.position > 20) ? tok.position - 20 : 0;
+            auto end = std::min(_inputText.size(), tok.position + 20);
+            std::string snippet = _inputText.substr(start, end - start);
+            std::cerr << snippet << std::endl;
+            std::cerr << std::string(tok.position - start, ' ') << "^" << std::endl;
+
+            // Exit the parser
             return;
         }
 
@@ -261,70 +280,127 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
 {
     std::vector<Token> tokens;
     size_t i = 0;
-
+    size_t currentLine = 1;
+    size_t currentCol = 0;
     std::string input((std::istreambuf_iterator<char>(_input)), std::istreambuf_iterator<char>());
+    _inputText = input;
 
     auto consume_string = [&]() -> std::string {
         size_t start = ++i;
-        while (i < input.size() && input[i] != '"')
+        ++currentCol;
+        while (i < _inputText.size() && _inputText[i] != '"') {
             ++i;
-        std::string val = input.substr(start, i - start);
+            ++currentCol;
+        }
+        std::string val = _inputText.substr(start, i - start);
         ++i;
+        ++currentCol;
         return val;
     };
 
     auto consume_number = [&]() -> std::string {
         size_t start = i;
-        if (input[i] == '-')
+        if (_inputText[i] == '-') {
             ++i;
-        while (i < input.size() && (isdigit(input[i]) || input[i] == '.'))
+            ++currentCol;
+        }
+        while (i < _inputText.size() && (isdigit(_inputText[i]) || _inputText[i] == '.')) {
             ++i;
-        return input.substr(start, i - start);
+            ++currentCol;
+        }
+        return _inputText.substr(start, i - start);
     };
 
-    while (i < input.size()) {
-        if (isspace(input[i])) {
+    while (i < _inputText.size()) {
+        if (_inputText[i] == '\n') {
+            ++currentLine;
+            currentCol = 1;
+        }
+        if (isspace(_inputText[i])) {
             ++i;
-        } else if (input[i] == '{') {
-            tokens.push_back({ TokenType::LBrace, "{"});
+            ++currentCol;
+        } else if (_inputText[i] == '{') {
+            tokens.push_back({ TokenType::LBrace, "{", i, currentLine, currentCol});
             ++i;
-        } else if (input[i] == '}') {
-            tokens.push_back({ TokenType::RBrace, "}"});
+            ++currentCol;
+        } else if (_inputText[i] == '}') {
+            tokens.push_back({ TokenType::RBrace, "}", i, currentLine, currentCol});
             ++i;
-        } else if (input[i] == '[') {
-            tokens.push_back({ TokenType::LBracket, "["});
+            ++currentCol;
+        } else if (_inputText[i] == '[') {
+            tokens.push_back({ TokenType::LBracket, "[", i, currentLine, currentCol});
             ++i;
-        } else if (input[i] == ']') {
-            tokens.push_back({ TokenType::RBracket, "]"});
+            ++currentCol;
+        } else if (_inputText[i] == ']') {
+            tokens.push_back({ TokenType::RBracket, "]", i, currentLine, currentCol});
             ++i;
-        } else if (input[i] == ':') {
-            tokens.push_back({ TokenType::Colon, ":"});
+            ++currentCol;
+        } else if (_inputText[i] == ':') {
+            tokens.push_back({ TokenType::Colon, ":", i, currentLine, currentCol});
             ++i;
-        } else if (input[i] == ',') {
-            tokens.push_back({ TokenType::Comma, ","});
+            ++currentCol;
+        } else if (_inputText[i] == ',') {
+            tokens.push_back({ TokenType::Comma, ",", i, currentLine, currentCol});
             ++i;
-        } else if (input[i] == '"') {
+            ++currentCol;
+        } else if (_inputText[i] == '"') {
             std::string str = consume_string();
-            tokens.push_back({ TokenType::String, str});
-        } else if (isdigit(input[i]) || input[i] == '-') {
+            tokens.push_back({ TokenType::String, str, i, currentLine, currentCol});
+        } else if (isdigit(_inputText[i]) || _inputText[i] == '-') {
             std::string num = consume_number();
-            tokens.push_back({ TokenType::Number, num});
-        } else if (input.compare(i, 4, "true") == 0) {
-            tokens.push_back({ TokenType::True, "true" });
+            tokens.push_back({ TokenType::Number, num, i, currentLine, currentCol});
+        } else if (_inputText.compare(i, 4, "true") == 0) {
+            tokens.push_back({ TokenType::True, "true", i, currentLine, currentCol });
             i += 4;
-        } else if (input.compare(i, 5, "false") == 0) {
-            tokens.push_back({ TokenType::False, "false" });
+            currentCol += 4;
+        } else if (_inputText.compare(i, 5, "false") == 0) {
+            tokens.push_back({ TokenType::False, "false", i, currentLine, currentCol });
             i += 5;
-        } else if (input.compare(i, 4, "null") == 0) {
-            tokens.push_back({ TokenType::Null, "null" });
+            currentCol += 5;
+        } else if (_inputText.compare(i, 4, "null") == 0) {
+            tokens.push_back({ TokenType::Null, "null", i, currentLine, currentCol });
             i += 4;
+            currentCol += 4;
         } else {
-            tokens.push_back({ TokenType::Invalid, std::string(1, input[i++]) });
+            tokens.push_back({ TokenType::Invalid, std::string(1, _inputText[i++]), i, currentLine, currentCol });
         }
     }
 
     tokens.push_back({ TokenType::End, ""});
     return tokens;
+}
+std::string JsonParser::expectedTokens(int state) const
+{
+    std::ostringstream oss;
+    bool first = true;
+    for(auto &kv : actionTable.at(state)) {
+        Symbol sym = static_cast<Symbol>(kv.first);
+        if (!first)
+            oss << ", ";
+        oss << symbolName(sym);
+        first = false;
+    }
+    return oss.str();
+}
+
+std::string JsonParser::symbolName(Symbol s) const
+{
+    switch (s)
+    {
+        case LBRACE:    return "'{'";
+        case RBRACE:    return "'}'";
+        case COLON:     return "':'";
+        case COMMA:     return "','";
+        case STRING:    return "string";
+        case NUMBER:    return "number";
+        case TRUE_SYM:  return "'true'";
+        case FALSE_SYM: return "'false'";
+        case NULL_SYM:  return "'null'";
+        case LBRACKET:  return "'['";
+        case RBRACKET:  return "']'";
+        case END_SYM:   return "end of input";
+        default:        return "?";
+    }
 }
 
 bool JsonParser::isValid()
