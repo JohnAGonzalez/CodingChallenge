@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# collect the files to edit
+header_files=$(find inc -type f -name "*.h")
+source_files=$(find src -type f -name "*.cpp")
+
+# Combine and sort:
+# - Extract base name (without extension)
+# - Extract extension
+# - Sort by basename, then extension (.h < .cpp)
+tmpfile=$(mktemp)
+
+for f in $header_files $source_files; do
+    filename=$(basename "$f")
+    base="${filename%.*}"
+    ext="${filename##*.}"
+    echo -e "$base\t$ext\t$f" >> "$tmpfile"
+done
+
+sorted_files=$(sort -k1,1 -k2,2r "$tmpfile" | cut -f3-)
+
+rm $tmpfile
+
+# launch VIM with the sorted files
+vim makefile $sorted_files
