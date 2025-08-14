@@ -1,4 +1,5 @@
 #include "CommandLine.h"
+#include <iostream>
 
 CommandLine::CommandLine(int argc, char** argv) : _argc(argc), _argv(argv)
 {
@@ -16,4 +17,12 @@ void CommandLine::init()
 std::vector<std::string> CommandLine::getParams()
 {
     return _params;
+}
+
+void CommandLine::showParams()
+{
+    for (auto param : _params)
+    {
+        std::cout << "  " << param << std::endl;
+    }
 }

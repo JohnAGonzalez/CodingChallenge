@@ -9,6 +9,7 @@ class CommandLine
     public:
         CommandLine(int argc, char** argv);
         std::vector<std::string> getParams();
+        void showParams();
 
     protected:
         CommandLine();
