@@ -8,10 +8,19 @@ int main(int argc, char** argv)
     CommandLine cl(argc, argv);
 
     // show the command-line parameters
-    cl.showParams();
+    // cl.showParams();
 
     // get the path from the system environment
     Environment e;
+
+    // show the list of environment paths
+    // e.showPaths();
+
+    // search for the files specified in the paths
+    PathFinder finder(cl, e);
+
+    // show the results
+    finder.showExecutables();
     
     return 0;
 }

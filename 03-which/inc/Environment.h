@@ -9,6 +9,7 @@ class Environment
     public:
         Environment();
         std::vector<std::string> getPaths();
+        void showPaths();
 
     protected:
 

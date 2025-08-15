@@ -3,6 +3,7 @@
 
 #include "CommandLine.h"
 #include "Environment.h"
+#include "PathFinder.h"
 
 #include <iostream>
 

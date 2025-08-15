@@ -21,8 +21,9 @@ std::vector<std::string> CommandLine::getParams()
 
 void CommandLine::showParams()
 {
+    std::cout << "  Params:" << std::endl;
     for (auto param : _params)
     {
-        std::cout << "  " << param << std::endl;
+        std::cout << "    " << param << std::endl;
     }
 }
