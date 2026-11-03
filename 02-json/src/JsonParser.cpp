@@ -214,7 +214,7 @@ void JsonParser::initParseTables()
     // -- State 25: VALUE -> [ VALUE ]
     actionTable[25][COMMA]    = { REDUCE, 13 };
     actionTable[25][RBRACE]   = { REDUCE, 13 };
-    actionTable[23][RBRACKET] = { REDUCE, 13 };
+    actionTable[25][RBRACKET] = { REDUCE, 13 };
 }
 
 void JsonParser::parse()
