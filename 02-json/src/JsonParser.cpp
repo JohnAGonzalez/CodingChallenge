@@ -299,15 +299,83 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
     };
 
     auto consume_number = [&]() -> std::string {
-        size_t start = i;
-        if (_inputText[i] == '-') {
+        const size_t start = i;
+
+        // RFC 8259: number = [minus] int [frac] [exp]
+        auto is_digit = [](char ch) {
+            return ch >= '0' && ch <= '9';
+        };
+
+        auto advance = [&]() {
             ++i;
             ++currentCol;
+        };
+
+        // Optional leading minus.
+        if (i < _inputText.size() && _inputText[i] == '-') {
+            advance();
         }
-        while (i < _inputText.size() && (isdigit(_inputText[i]) || _inputText[i] == '.')) {
-            ++i;
-            ++currentCol;
+
+        // Integer portion is mandatory.
+        if (i >= _inputText.size()) {
+            return {};
         }
+
+        if (_inputText[i] == '0') {
+            advance();
+
+            // Leading zeros are forbidden.
+            if (i < _inputText.size() && is_digit(_inputText[i])) {
+                return {};
+            }
+        } else if (_inputText[i] >= '1' &&
+                   _inputText[i] <= '9') {
+            do {
+                advance();
+            } while (i < _inputText.size() &&
+                     is_digit(_inputText[i]));
+        } else {
+            return {};
+        }
+
+        // Optional fractional portion.
+        if (i < _inputText.size() && _inputText[i] == '.') {
+            advance();
+
+            // At least one digit must follow the decimal point.
+            if (i >= _inputText.size() ||
+                !is_digit(_inputText[i])) {
+                return {};
+            }
+
+            while (i < _inputText.size() &&
+                   is_digit(_inputText[i])) {
+                advance();
+            }
+        }
+
+        // Optional exponent portion.
+        if (i < _inputText.size() &&
+            (_inputText[i] == 'e' || _inputText[i] == 'E')) {
+            advance();
+
+            if (i < _inputText.size() &&
+                (_inputText[i] == '+' || _inputText[i] == '-')) {
+                advance();
+            }
+
+            // Exponent must contain at least one digit.
+            if (i >= _inputText.size() ||
+                !is_digit(_inputText[i])) {
+                return {};
+            }
+
+            while (i < _inputText.size() &&
+                   is_digit(_inputText[i])) {
+                advance();
+            }
+        }
+
         return _inputText.substr(start, i - start);
     };
 
@@ -347,8 +415,28 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
             std::string str = consume_string();
             tokens.push_back({ TokenType::String, str, i, currentLine, currentCol});
         } else if (isdigit(_inputText[i]) || _inputText[i] == '-') {
+            const size_t start = i;
+            const size_t startCol = currentCol;
+
             std::string num = consume_number();
-            tokens.push_back({ TokenType::Number, num, i, currentLine, currentCol});
+
+            if (num.empty()) {
+                tokens.push_back({
+                    TokenType::Invalid,
+                    _inputText.substr(start, i - start),
+                    start,
+                    currentLine,
+                    startCol
+                });
+            } else {
+                tokens.push_back({
+                    TokenType::Number,
+                    num,
+                    start,
+                    currentLine,
+                    startCol
+                });
+            }
         } else if (_inputText.compare(i, 4, "true") == 0) {
             tokens.push_back({ TokenType::True, "true", i, currentLine, currentCol });
             i += 4;
