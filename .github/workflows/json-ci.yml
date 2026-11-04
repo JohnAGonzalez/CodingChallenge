@@ -1,0 +1,44 @@
+
+name: JSON Parser CI
+
+on:
+  push:
+    paths:
+      - '02-json/**'
+      - '.github/workflows/json-ci.yml'
+  pull_request:
+    paths:
+      - '02-json/**'
+      - '.github/workflows/json-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    defaults:
+      run:
+        working-directory: 02-json
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build --config Debug --parallel
+
+      - name: Run regression tests
+        run: ctest --test-dir build -C Debug --output-on-failure
+

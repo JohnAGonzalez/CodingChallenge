@@ -3,12 +3,16 @@
 """Regression tests for JSON number handling."""
 
 import pathlib
+from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import os
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-EXECUTABLE = ROOT / "bin" / "json"
+EXECUTABLE = Path(
+    os.environ.get("JSON_PARSER_EXECUTABLE", str(ROOT / "bin" / "json"))
+)
 
 CASES = [
     ("positive integer", '{"n":123}', True),

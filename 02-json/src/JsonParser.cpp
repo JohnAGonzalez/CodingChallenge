@@ -534,7 +534,7 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
         }
     }
 
-    tokens.push_back({ TokenType::End, ""});
+    tokens.push_back({ TokenType::End, "", i, currentLine, currentCol});
     return tokens;
 }
 std::string JsonParser::expectedTokens(int state) const
