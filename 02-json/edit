@@ -22,4 +22,4 @@ sorted_files=$(sort -k1,1 -k2,2r "$tmpfile" | cut -f3-)
 rm $tmpfile
 
 # launch VIM with the sorted files
-vim makefile $sorted_files
+vim makefile CMakeLists.txt $sorted_files
