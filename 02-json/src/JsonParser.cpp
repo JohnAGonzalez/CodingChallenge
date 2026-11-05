@@ -214,7 +214,7 @@ void JsonParser::initParseTables()
     // -- State 25: VALUE -> [ VALUE ]
     actionTable[25][COMMA]    = { REDUCE, 13 };
     actionTable[25][RBRACE]   = { REDUCE, 13 };
-    actionTable[23][RBRACKET] = { REDUCE, 13 };
+    actionTable[25][RBRACKET] = { REDUCE, 13 };
 }
 
 void JsonParser::parse()
@@ -285,29 +285,166 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
     std::string input((std::istreambuf_iterator<char>(_input)), std::istreambuf_iterator<char>());
     _inputText = input;
 
-    auto consume_string = [&]() -> std::string {
-        size_t start = ++i;
+    auto consume_string = [&]() -> bool {
+        // The caller has positioned i at the opening quote.
+        ++i;
         ++currentCol;
-        while (i < _inputText.size() && _inputText[i] != '"') {
+
+        auto is_hex = [](char ch) {
+            return (ch >= '0' && ch <= '9') ||
+                   (ch >= 'a' && ch <= 'f') ||
+                   (ch >= 'A' && ch <= 'F');
+        };
+
+        while (i < _inputText.size()) {
+            const unsigned char ch =
+                static_cast<unsigned char>(_inputText[i]);
+
+            // Closing quotation mark.
+            if (ch == '"') {
+                ++i;
+                ++currentCol;
+                return true;
+            }
+
+            // JSON forbids unescaped control characters.
+            if (ch < 0x20) {
+                return false;
+            }
+
+            if (ch == '\\') {
+                ++i;
+                ++currentCol;
+
+                if (i >= _inputText.size()) {
+                    return false;
+                }
+
+                const char escaped = _inputText[i];
+
+                switch (escaped) {
+                    case '"':
+                    case '\\':
+                    case '/':
+                    case 'b':
+                    case 'f':
+                    case 'n':
+                    case 'r':
+                    case 't':
+                        ++i;
+                        ++currentCol;
+                        break;
+
+                    case 'u':
+                        ++i;
+                        ++currentCol;
+
+                        // Unicode escape requires exactly four
+                        // hexadecimal digits.
+                        for (int digit = 0; digit < 4; ++digit) {
+                            if (i >= _inputText.size() ||
+                                !is_hex(_inputText[i])) {
+                                return false;
+                            }
+
+                            ++i;
+                            ++currentCol;
+                        }
+                        break;
+
+                    default:
+                        return false;
+                }
+
+                continue;
+            }
+
             ++i;
             ++currentCol;
         }
-        std::string val = _inputText.substr(start, i - start);
-        ++i;
-        ++currentCol;
-        return val;
+
+        // Reached end of input without a closing quote.
+        return false;
     };
 
     auto consume_number = [&]() -> std::string {
-        size_t start = i;
-        if (_inputText[i] == '-') {
+        const size_t start = i;
+
+        // RFC 8259: number = [minus] int [frac] [exp]
+        auto is_digit = [](char ch) {
+            return ch >= '0' && ch <= '9';
+        };
+
+        auto advance = [&]() {
             ++i;
             ++currentCol;
+        };
+
+        // Optional leading minus.
+        if (i < _inputText.size() && _inputText[i] == '-') {
+            advance();
         }
-        while (i < _inputText.size() && (isdigit(_inputText[i]) || _inputText[i] == '.')) {
-            ++i;
-            ++currentCol;
+
+        // Integer portion is mandatory.
+        if (i >= _inputText.size()) {
+            return {};
         }
+
+        if (_inputText[i] == '0') {
+            advance();
+
+            // Leading zeros are forbidden.
+            if (i < _inputText.size() && is_digit(_inputText[i])) {
+                return {};
+            }
+        } else if (_inputText[i] >= '1' &&
+                   _inputText[i] <= '9') {
+            do {
+                advance();
+            } while (i < _inputText.size() &&
+                     is_digit(_inputText[i]));
+        } else {
+            return {};
+        }
+
+        // Optional fractional portion.
+        if (i < _inputText.size() && _inputText[i] == '.') {
+            advance();
+
+            // At least one digit must follow the decimal point.
+            if (i >= _inputText.size() ||
+                !is_digit(_inputText[i])) {
+                return {};
+            }
+
+            while (i < _inputText.size() &&
+                   is_digit(_inputText[i])) {
+                advance();
+            }
+        }
+
+        // Optional exponent portion.
+        if (i < _inputText.size() &&
+            (_inputText[i] == 'e' || _inputText[i] == 'E')) {
+            advance();
+
+            if (i < _inputText.size() &&
+                (_inputText[i] == '+' || _inputText[i] == '-')) {
+                advance();
+            }
+
+            // Exponent must contain at least one digit.
+            if (i >= _inputText.size() ||
+                !is_digit(_inputText[i])) {
+                return {};
+            }
+
+            while (i < _inputText.size() &&
+                   is_digit(_inputText[i])) {
+                advance();
+            }
+        }
+
         return _inputText.substr(start, i - start);
     };
 
@@ -344,11 +481,42 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
             ++i;
             ++currentCol;
         } else if (_inputText[i] == '"') {
-            std::string str = consume_string();
-            tokens.push_back({ TokenType::String, str, i, currentLine, currentCol});
+            const size_t start = i;
+            const size_t startLine = currentLine;
+            const size_t startCol = currentCol;
+
+            const bool valid = consume_string();
+
+            tokens.push_back({
+                valid ? TokenType::String : TokenType::Invalid,
+                _inputText.substr(start, i - start),
+                start,
+                startLine,
+                startCol
+            });
         } else if (isdigit(_inputText[i]) || _inputText[i] == '-') {
+            const size_t start = i;
+            const size_t startCol = currentCol;
+
             std::string num = consume_number();
-            tokens.push_back({ TokenType::Number, num, i, currentLine, currentCol});
+
+            if (num.empty()) {
+                tokens.push_back({
+                    TokenType::Invalid,
+                    _inputText.substr(start, i - start),
+                    start,
+                    currentLine,
+                    startCol
+                });
+            } else {
+                tokens.push_back({
+                    TokenType::Number,
+                    num,
+                    start,
+                    currentLine,
+                    startCol
+                });
+            }
         } else if (_inputText.compare(i, 4, "true") == 0) {
             tokens.push_back({ TokenType::True, "true", i, currentLine, currentCol });
             i += 4;
@@ -366,7 +534,7 @@ std::vector<JsonParser::Token> JsonParser::tokenize()
         }
     }
 
-    tokens.push_back({ TokenType::End, ""});
+    tokens.push_back({ TokenType::End, "", i, currentLine, currentCol});
     return tokens;
 }
 std::string JsonParser::expectedTokens(int state) const
